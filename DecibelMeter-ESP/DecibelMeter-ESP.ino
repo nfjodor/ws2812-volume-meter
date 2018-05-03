@@ -1,4 +1,4 @@
-const int sensitivity = 92;
+const int sensitivity = 50;
 
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
 unsigned int sample;
