@@ -1,11 +1,9 @@
-const int sensitivity = 50;
+const int sensitivity = 90;
 
-const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
-unsigned int sample;
-
+const int sampleWindow = 60; // Sample window width in mS (50 mS = 20Hz)
 // pins
 #define MicPin A0 // used with analogRead mode only
-#define LedPin D2
+#define LedPin 4
 
 // LED STRIP
 #define greenPrecent 50
@@ -16,10 +14,11 @@ unsigned int sample;
 int ledArray[LEDCOUNT][3];
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDCOUNT, LedPin, NEO_GRB + NEO_KHZ800);
 
+ADC_MODE(ADC_TOUT);
 void setup()
 {
     // serial
-    Serial.begin(9600);
+    Serial.begin(74880);
     while (!Serial)
         ; // Wait untilSerial is ready - Leonardo
     Serial.println("Starting mic volume meter");
@@ -52,12 +51,16 @@ void loop()
 {
     unsigned long startMillis = millis(); // Start of sample window
     unsigned int peakToPeak = 0; // peak-to-peak level
+    unsigned int sample;
 
-    unsigned int signalMax = 0;
-    unsigned int signalMin = 1024;
+    int signalMax = 0;
+    int signalMin = 1024;
+
+    Serial.println(analogRead(MicPin));
 
     while (millis() - startMillis < sampleWindow) {
-        sample = analogRead(0);
+        sample = analogRead(MicPin);
+        
         if (sample < 1024) // toss out spurious readings
         {
             if (sample > signalMax) {
@@ -68,11 +71,14 @@ void loop()
             }
         }
     }
-    peakToPeak = signalMax - signalMin;
+    peakToPeak = min(1024, max(0, signalMax - signalMin));
 
     // map 1v p-p level to the max scale of the display
     int displayPeak = map(peakToPeak, 0, (10.23 * (100 - sensitivity)), 0, LEDCOUNT);
-    Serial.println(displayPeak);
+    //Serial.println("p-p min level: : " + String(signalMin));
+    //Serial.println("p-p max level: : " + String(signalMax));
+    //Serial.println("p-p level: : " + String(peakToPeak));
+    //Serial.println("Volume: " + String(displayPeak));
 
     for (int i = 0; i < LEDCOUNT; i++) // update ledstrip
     {
@@ -85,7 +91,4 @@ void loop()
     }
     strip.show();
     delay(10);
-    if (displayPeak >= LEDCOUNT) {
-        delay(1000);
-    }
 }

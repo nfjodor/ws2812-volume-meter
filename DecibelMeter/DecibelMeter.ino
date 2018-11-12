@@ -1,6 +1,6 @@
 // pins
 #define MicPin A0 // used with analogRead mode only
-#define LedPin 6
+#define LedPin D2
 
 // consts
 #define Sensitivity 92 // 0 - 100
@@ -8,9 +8,9 @@
 #define MicSamples (1024*2) // Three of these time-weightings have been internationally standardised, 'S' (1 s) originally called Slow, 'F' (125 ms) originally called Fast and 'I' (35 ms) originally called Impulse.
 
 // modes
-//#define Use3.3 // use 3.3 voltage. the 5v voltage from usb is not regulated. this is much more stable.
-#define ADCReClock // switch to higher clock, not needed if we are ok with freq between 0 and 4Khz.
-#define ADCFlow // read data from adc with free-run (not interupt). much better data, dc low. hardcoded for A0.
+#define Use3.3 // use 3.3 voltage. the 5v voltage from usb is not regulated. this is much more stable.
+//#define ADCReClock // switch to higher clock, not needed if we are ok with freq between 0 and 4Khz.
+//#define ADCFlow // read data from adc with free-run (not interupt). much better data, dc low. hardcoded for A0.
 
 #define VolumeGainFactorBits 0
 
@@ -47,7 +47,7 @@ void setup()
   DIDR0 = 0x01; // turn off the digital input for adc0
 #else
 #ifdef Use3.3
-  analogReference(EXTERNAL); // 3.3V to AREF
+  // analogReference(EXTERNAL); // 3.3V to AREF
 #endif
 #endif
 
@@ -113,15 +113,16 @@ void MeasureVolume()
 #else
     int k = analogRead(MicPin);
 #endif
-    int amp = abs(k - AmpMax);
+    long amp = abs(k - AmpMax);
     amp <<= VolumeGainFactorBits;
     soundVolMax = max(soundVolMax, amp);
   }
 
   // convert from 0 to 100
   soundVolMax = 100 * soundVolMax / AmpMax;
+  Serial.println(soundVolMax);
 
-  int displayPeak = min(LEDCOUNT, map(soundVolMax, 0, 100 - Sensitivity, 0, LEDCOUNT));
+  int displayPeak = map(soundVolMax, 0, 20, 0, LEDCOUNT);
   
   for (int i = 0; i < LEDCOUNT; i++) // update ledstrip
   {
@@ -133,7 +134,6 @@ void MeasureVolume()
     }
   }
   strip.show();
-  delay(10);
   if (displayPeak >= LEDCOUNT) {
     delay(1000);
   }
